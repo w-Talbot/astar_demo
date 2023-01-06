@@ -8,16 +8,6 @@
  H cost is how far away from the end node
  F cost is H cost plus G cost
  
- So it chooses the lowest F cost each time and moves on
- 
- If in a scenario where the F cost is equal then choose by lowest H cost.
- 
- Maybe stop an re-eval when F cost is going up?
- 
- FRom the video, all the green nodes, whihc were available were in the open_set. The closed_set is the ones that have already been evaluated (red).
- To begin add the starting node to the open list, the only thing in the list,
- 
- 
  */
 
 
@@ -89,20 +79,19 @@ void ofApp::draw(){
         }else if(grid_points_x_y_c[i][2] == 4){
             grid_points_x_y_c[i][2] = 0;
             ofSetColor(255);
+        }else if(grid_points_x_y_c[i][2] == 5){
+            ofSetColor(245, 236, 66);
         }
            
             ofDrawRectangle(grid_points_x_y_c[i][0], grid_points_x_y_c[i][1],box_size_w, box_size_h);
     }
     
-    if(open_set.size() > 0){
-        int winner = 0;
-        for (int i =0; i < open_set.size(); i++){
-            if(open_set[i] < open_set[winner]){
-                winner = i;
-            }
+    if(final_path.size() > 0){
+        for(int j = 0; j < final_path.size()-2; j+=2){
+            ofSetColor(0, 255, 0);
+            ofSetLineWidth(box_size_w);
+            ofDrawLine(final_path[j], final_path[j+1], final_path[j+2], final_path[j+3]);
         }
-    }else {
-        //no solution
     }
     
     
@@ -130,6 +119,8 @@ void ofApp::keyPressed(int key){
 
             }
         }
+        final_path.clear();
+        walls.clear();
         start.clear();
         last_checked_node.clear();
         open_set.clear();
@@ -146,8 +137,46 @@ void ofApp::keyPressed(int key){
 }
 
 //--------------------------------------------------------------
-vector<int> ofApp::reconstruct_path(vector<int> cameFrom, vector<int>current){
+void ofApp::reconstruct_path(vector<vector<int>> cameFrom, vector<int>end){
 
+    
+    
+    
+    final_path.push_back(end[0]);//current goal_x
+    final_path.push_back(end[1]);//current goal_y
+   
+    vector<vector<int>> temp_vals;
+    temp_vals.push_back(end);
+    
+    for(int i = cameFrom.size()-1; i >= 0; i--){
+        
+        if(
+           cameFrom[i][0] == temp_vals[0][4] &&
+           cameFrom[i][1] == temp_vals[0][5]){
+            
+            final_path.push_back(cameFrom[i][0]);
+            final_path.push_back(cameFrom[i][1]);
+            temp_vals.clear();
+            temp_vals.push_back(cameFrom[i]);
+            
+        }
+    }
+    
+    
+
+}
+
+//--------------------------------------------------------------
+bool ofApp::check_for_walls(int x, int y, vector<int>vec_to_check){
+
+    bool response = false;
+    for(int i = 0; i < vec_to_check.size(); i+=2){
+        if(x == vec_to_check[i] && y == vec_to_check[i+1]){
+            response = true;
+        }
+    }
+    
+    return response;
 }
 
 //--------------------------------------------------------------
@@ -171,13 +200,18 @@ vector<vector<int>> ofApp::remove_vector_element(vector<vector<int>> vec, vector
     return vec;
 }
 //--------------------------------------------------------------
-void ofApp::color_check(int x, int y){
+void ofApp::color_check(int x, int y, int sx, int sy, int gx, int gy){
    
     for (int i = 0; i < grid_points_x_y_c.size(); i++){
-            
+        
+        //if the point to check is the start or goal; skip:
+        if (grid_points_x_y_c[i][0] == sx && grid_points_x_y_c[i][1] == sy || grid_points_x_y_c[i][0] == gx && grid_points_x_y_c[i][1] == gy){
+            continue;
+        }
+        
         if(grid_points_x_y_c[i][0] == x && grid_points_x_y_c[i][1] == y ){
             
-            grid_points_x_y_c[i][2] = 2;
+            grid_points_x_y_c[i][2] = 5;
             ofSetColor(245, 242, 66);
             ofDrawRectangle(x, y,box_size_w, box_size_h);
 
@@ -193,54 +227,75 @@ vector<int> ofApp::get_all_neighbors(vector<int> vec){
     int tmp_y = vec[1];
     vector<int> neighbors;
     int tmpf, tmpg, tmph;
+    bool is_wall = false;
     
     //LEFT:
-    if(tmp_x >= startingX + spacingX){
-        neighbors.push_back(tmp_x - ( spacingX));
-        neighbors.push_back(tmp_y);
+    if(tmp_x >= (startingX + spacingX)){
         
-        tmpg = heuristic(tmp_x - ( spacingX), tmp_y, start_x, start_y);
-        tmph = heuristic(tmp_x - ( spacingX), tmp_y, goal_x, goal_y);
-        tmpf = tmph + tmpg;
+        is_wall = check_for_walls(tmp_x - ( spacingX), tmp_y, walls);
         
-        neighbors.push_back(tmpf);
-        neighbors.push_back(tmpg);
-        
+        if(is_wall == false){
+            neighbors.push_back(tmp_x - ( spacingX));
+            neighbors.push_back(tmp_y);
+            
+            tmpg = heuristic(tmp_x - ( spacingX), tmp_y, start_x, start_y);
+            tmph = heuristic(tmp_x - ( spacingX), tmp_y, goal_x, goal_y);
+            tmpf = tmph + tmpg;
+            
+            neighbors.push_back(tmpf);
+            neighbors.push_back(tmpg);
+        }
     }
     //RIGHT:
-    if(tmp_x <= ofGetWidth() - startingX + spacingX){
-        neighbors.push_back(tmp_x + (spacingX));
-        neighbors.push_back(tmp_y);
+    if(tmp_x <= (ofGetWidth() - (startingX + spacingX))){
         
-        tmpg = heuristic(tmp_x + (spacingX), tmp_y, start_x, start_y);
-        tmph = heuristic(tmp_x + (spacingX), tmp_y, goal_x, goal_y);
-        tmpf = tmph + tmpg;
-        neighbors.push_back(tmpf);
-        neighbors.push_back(tmpg);
+        is_wall = check_for_walls(tmp_x + (spacingX),tmp_y, walls);
+        
+        if(is_wall == false){
+            neighbors.push_back(tmp_x + (spacingX));
+            neighbors.push_back(tmp_y);
+            
+            tmpg = heuristic(tmp_x + (spacingX), tmp_y, start_x, start_y);
+            tmph = heuristic(tmp_x + (spacingX), tmp_y, goal_x, goal_y);
+            tmpf = tmph + tmpg;
+            neighbors.push_back(tmpf);
+            neighbors.push_back(tmpg);
+        }
         
     }
     //ABOVE:
-    if(tmp_y >= startingY + spacingY){
-        neighbors.push_back(tmp_x);
-        neighbors.push_back(tmp_y - ( spacingY));
-        
-        tmpg = heuristic(tmp_x, tmp_y - ( spacingY), start_x, start_y);
-        tmph = heuristic(tmp_x, tmp_y - ( spacingY), goal_x, goal_y);
-        tmpf = tmph + tmpg;
-        neighbors.push_back(tmpf);
-        neighbors.push_back(tmpg);
+    if(tmp_y >= (startingY + spacingY)){
+            
+        is_wall = check_for_walls(tmp_x,tmp_y - ( spacingY),walls);
+         
+        if(is_wall == false){
+            neighbors.push_back(tmp_x);
+            neighbors.push_back(tmp_y - ( spacingY));
+            
+            tmpg = heuristic(tmp_x, tmp_y - ( spacingY), start_x, start_y);
+            tmph = heuristic(tmp_x, tmp_y - ( spacingY), goal_x, goal_y);
+            tmpf = tmph + tmpg;
+            neighbors.push_back(tmpf);
+            neighbors.push_back(tmpg);
+        }
         
     }
     //BELOW:
-    if(tmp_y <= ofGetHeight() - startingY + spacingY){
-        neighbors.push_back(tmp_x);
-        neighbors.push_back(tmp_y + ( spacingY));
-        
-        tmpg = heuristic(tmp_x, tmp_y + ( spacingY), start_x, start_y);
-        tmph = heuristic(tmp_x, tmp_y + ( spacingY), goal_x, goal_y);
-        tmpf = tmph + tmpg;
-        neighbors.push_back(tmpf);
-        neighbors.push_back(tmpg);
+    if(tmp_y <= (ofGetHeight() - (startingY + spacingY))){
+            
+            
+        is_wall = check_for_walls(tmp_x,tmp_y + ( spacingY),walls);
+          
+        if(is_wall == false){
+            neighbors.push_back(tmp_x);
+            neighbors.push_back(tmp_y + ( spacingY));
+            
+            tmpg = heuristic(tmp_x, tmp_y + ( spacingY), start_x, start_y);
+            tmph = heuristic(tmp_x, tmp_y + ( spacingY), goal_x, goal_y);
+            tmpf = tmph + tmpg;
+            neighbors.push_back(tmpf);
+            neighbors.push_back(tmpg);
+        }
     }
     
 
@@ -261,8 +316,16 @@ void ofApp::a_star(){
     int y = 1;
     int f = 2;
     int g = 3;
-    int prev_x = 4;
-    int prev_y = 5;
+    
+    
+    //Get all walls first:
+    for(int j = 0; j < grid_points_x_y_c.size(); j++){
+        if(grid_points_x_y_c[j][2] == 1){
+            walls.push_back(grid_points_x_y_c[j][0]);
+            walls.push_back(grid_points_x_y_c[j][1]);
+        }
+    }
+   
     
     //Gets the start and goal coordinates:
     bool start_set = false;
@@ -330,12 +393,12 @@ void ofApp::a_star(){
             
             last_checked_node = current;
         
-        color_check(current[x], current[y]);
+        color_check(current[x], current[y], start_x, start_y, goal_x, goal_y);
             
         //Check if finished:
             if(current[x] == goal_x && current[y] == goal_y){
                 std::cout<< "DONE!" << endl;
-                int stop = 0;
+                reconstruct_path(closed_set, current);
                 break;
             }
             
@@ -414,7 +477,8 @@ void ofApp::mousePressed(int x, int y, int button){
                y < grid_points_x_y_c[i][1]+ box_size_h){
         
                 grid_points_x_y_c[i][2] +=1;
-                
+               
+        
                 std::cout << "x: " << grid_points_x_y_c[i][0] << " y: " << grid_points_x_y_c[i][1] << endl;
             }
     }
