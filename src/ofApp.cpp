@@ -22,6 +22,7 @@ void ofApp::setup(){
     startingX = spacingX /2;
     startingY = spacingY /2;
     
+    font.load("franklinGothic.otf", 10);
     
     stepSize = 20;
 
@@ -82,8 +83,14 @@ void ofApp::draw(){
         }else if(grid_points_x_y_c[i][2] == 5){
             ofSetColor(245, 236, 66);
         }
-           
+        
             ofDrawRectangle(grid_points_x_y_c[i][0], grid_points_x_y_c[i][1],box_size_w, box_size_h);
+     
+        //Display x,y coords for debugging:
+//        ofPushStyle();
+//        ofSetColor(252, 3, 248);
+//        font.drawString("" + ofToString(grid_points_x_y_c[i][0]) + "," + ofToString(grid_points_x_y_c[i][1]),grid_points_x_y_c[i][0], grid_points_x_y_c[i][1]+(20+box_size_h));
+//        ofPopStyle();
     }
     
     if(final_path.size() > 0){
@@ -134,6 +141,20 @@ void ofApp::keyPressed(int key){
         a_star();
     }
     
+    //Randomly generated obstacles:
+    if(key == 'x' || key == 'X'){
+        
+        int number_of_obstacles = ofRandom(grid_points_x_y_c.size() - 2);
+        
+        for(int i = 0; i < number_of_obstacles; i++){
+            int loc = ofRandom(grid_points_x_y_c.size());
+            grid_points_x_y_c[loc][2] = 1;
+            
+        }
+        grid_points_x_y_c[ofRandom(grid_points_x_y_c.size())][2] = 2;
+        grid_points_x_y_c[ofRandom(grid_points_x_y_c.size())][2] = 3;
+    }
+    
 }
 
 //--------------------------------------------------------------
@@ -149,6 +170,15 @@ void ofApp::reconstruct_path(vector<vector<int>> cameFrom, vector<int>end){
     temp_vals.push_back(end);
     
     for(int i = cameFrom.size()-1; i >= 0; i--){
+        std::cout
+        << "i = " << i << endl
+        << " x: " <<cameFrom[i][0]<< endl
+        << " y: " <<cameFrom[i][1]<< endl
+        << " f: " <<cameFrom[i][2]<< endl
+        << " g: " <<cameFrom[i][3]<< endl
+        << " prev_x: " <<cameFrom[i][4]<< endl
+        << " prev_y: " <<cameFrom[i][5]<< endl
+        << endl;
         
         if(
            cameFrom[i][0] == temp_vals[0][4] &&
@@ -182,9 +212,18 @@ bool ofApp::check_for_walls(int x, int y, vector<int>vec_to_check){
 //--------------------------------------------------------------
 int ofApp::heuristic(int a_x, int a_y, int b_x, int b_y){
 
-    int tmp_x = abs(a_x - b_x);
-    int tmp_y = abs(a_y - b_y);
-    int distance = tmp_x + tmp_y;
+    //"new york taxi" distance
+//    int tmp_x = abs(a_x - b_x);
+//    int tmp_y = abs(a_y - b_y);
+//    int distance = tmp_x + tmp_y;
+//
+    
+    //"visual distance"
+    int a = abs(a_x - b_x);
+    int b = abs(a_y - b_y);
+    int c = sqrt((a * a) + (b * b));
+    int distance = c;
+    
     
     return distance;
 }
@@ -375,21 +414,21 @@ void ofApp::a_star(){
     while (open_set.size() > 0) {
         
         
-        int winner = 0;
+        int index_lowest_f = 0;
         
         for (int i = 0; i < open_set.size(); i++){
             
-            if(open_set[i][f] < open_set[winner][f]){
-                winner = i;
+            if(open_set[i][f] < open_set[index_lowest_f][f]){
+                index_lowest_f = i;
             }
-            if(open_set[i][f] == open_set[winner][f]){
-                if(open_set[i][g] > open_set[winner][g]){
-                    winner = i;
+            if(open_set[i][f] == open_set[index_lowest_f][f]){
+                if(open_set[i][g] > open_set[index_lowest_f][g]){
+                    index_lowest_f = i;
                 }
             }
         }
             vector<int> current;
-            current = open_set[winner];
+            current = open_set[index_lowest_f];
             
             last_checked_node = current;
         

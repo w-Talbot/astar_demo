@@ -28,7 +28,7 @@ class ofApp : public ofBaseApp{
     int start_x,start_y,goal_x,goal_y;
     bool in_closed, in_open;
     
-    
+    ofTrueTypeFont        font;
     
     
     static const int numX=10;
