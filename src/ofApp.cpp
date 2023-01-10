@@ -57,8 +57,34 @@ void ofApp::setup(){
 //--------------------------------------------------------------
 void ofApp::update(){
 
+      
 }
+//--------------------------------------------------------------
+void ofApp::clear_all_data(){
+    
+    grid_points_x_y_c.clear();
+    for ( int x = 0; x < numX; x++){
+        for (int y = 0; y < numY; y++){
 
+            int tmp_loc_x = startingX + spacingX * x ;
+            int tmp_loc_y = startingY + spacingY * y ;
+
+            vector<int> x_y_c_init;
+            x_y_c_init.push_back(tmp_loc_x);
+            x_y_c_init.push_back(tmp_loc_y);
+            x_y_c_init.push_back(0);
+
+            grid_points_x_y_c.push_back(x_y_c_init);
+
+        }
+    }
+    final_path.clear();
+    walls.clear();
+    start.clear();
+    last_checked_node.clear();
+    open_set.clear();
+    closed_set.clear();
+}
 //--------------------------------------------------------------
 void ofApp::draw(){
     
@@ -110,29 +136,7 @@ void ofApp::keyPressed(int key){
 
     //CLEAR ALL VALUES:
     if(key == 'c' || key == 'C'){
-        grid_points_x_y_c.clear();
-        for ( int x = 0; x < numX; x++){
-            for (int y = 0; y < numY; y++){
-
-                int tmp_loc_x = startingX + spacingX * x ;
-                int tmp_loc_y = startingY + spacingY * y ;
-
-                vector<int> x_y_c_init;
-                x_y_c_init.push_back(tmp_loc_x);
-                x_y_c_init.push_back(tmp_loc_y);
-                x_y_c_init.push_back(0);
-
-                grid_points_x_y_c.push_back(x_y_c_init);
-
-            }
-        }
-        final_path.clear();
-        walls.clear();
-        start.clear();
-        last_checked_node.clear();
-        open_set.clear();
-        closed_set.clear();
-        
+        clear_all_data();
     }
     
     
@@ -143,6 +147,8 @@ void ofApp::keyPressed(int key){
     
     //Randomly generated obstacles:
     if(key == 'x' || key == 'X'){
+        
+        clear_all_data();
         
         int number_of_obstacles = ofRandom(grid_points_x_y_c.size() - 2);
         

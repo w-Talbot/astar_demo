@@ -20,7 +20,7 @@ class ofApp : public ofBaseApp{
         vector<int> get_all_neighbors(vector<int> vec);
         void color_check(int x, int y, int sx, int sy, int gx, int gy);
         bool check_for_walls(int x, int y, vector<int>vec_to_check);
-    
+        void clear_all_data();
 
 
     vector<int>start, last_checked_node, walls, final_path;
